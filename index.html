@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <title>Gestione Magazzino</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input[type="button"] {
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Inserimento</h2>
+        <form>
+            <label for="codice">Codice prodotto:</label>
+            <input type="text" id="codice" name="codice"><br>
+
+            <label for="descrizione">Descrizione:</label>
+            <input type="text" id="descrizione" name="descrizione"><br>
+
+            <label for="posizione">Posizione:</label>
+            <input type="text" id="posizione" name="posizione"><br>
+
+            <label for="montatura">Montatura(SI/NO):</label>
+            <input type="text" id="montatura" name="montatura"><br>
+
+            <label for="computer">Computer Allegato?</label>
+            <input type="text" id="computer" name="computer"><br>
+
+            <input type="button" value="Aggiungi Dati" onclick="aggiungiDati()">
+        </form>
+
+        <h2>Visualizzazione Dati</h2>
+        <table id="tabellaDati">
+            <thead>
+                <tr>
+                    <th>Codice</th>
+                    <th>Descrizione</th>
+                    <th>Posizione</th>
+                    <th>Montatura(SI/NO)</th>
+                    <th>Computer Allegato?</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- I dati verranno inseriti qui in automatico-->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+            caricaDati();
+        });
+
+        function caricaDati() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'carica_dati.php', true);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var dati = JSON.parse(xhr.responseText);
+                    for (var i = 0; i < dati.length; i++) {
+                        aggiornaTabella(dati[i]);
+                    }
+                } else {
+                    alert('Errore durante il caricamento dei dati. Riprova');
+                }
+            };
+            xhr.send();
+        }
+
+
+        function aggiungiDati() {
+            var codice = document.getElementById("codice").value.trim();
+            var descrizione = document.getElementById("descrizione").value.trim();
+            var posizione = document.getElementById("posizione").value.trim();
+            var montatura = document.getElementById("montatura").value.trim();
+            var computer = document.getElementById("computer").value.trim();
+
+            if (codice === '' || descrizione === '' || posizione === '' || montatura === '' || computer === '') {
+                alert("Compilare tutti i campi");
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('codice', codice);
+            formData.append('descrizione', descrizione);
+            formData.append('posizione', posizione);
+            formData.append('montatura', montatura);
+            formData.append('computer', computer);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'salva_dati.php', true);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    aggiornaTabella(JSON.parse(xhr.responseText));
+                } else {
+                    alert('Errore durante il salvataggio. Riprova');
+                }
+            };
+            xhr.send(formData);
+        }
+
+        function aggiornaTabella(dati) {
+            var tabella = document.getElementById("tabellaDati").getElementsByTagName('tbody')[0];
+            var nuovaRiga = tabella.insertRow();
+
+            var cellacodice = nuovaRiga.insertCell(0);
+            var celladescrizione = nuovaRiga.insertCell(1);
+            var cellaposizione = nuovaRiga.insertCell(2);
+            var cellamontatura = nuovaRiga.insertCell(3);
+            var cellacomputer = nuovaRiga.insertCell(4);
+            var cellaelimina = nuovaRiga.insertCell(5);
+
+            cellacodice.innerHTML = dati.codice;
+            celladescrizione.innerHTML = dati.descrizione;
+            cellaposizione.innerHTML = dati.posizione;
+            cellamontatura.innerHTML = dati.montatura;
+            cellacomputer.innerHTML = dati.computer;
+
+            var deleteButton = document.createElement('button');
+            deleteButton.innerHTML = 'Delete';
+            deleteButton.onclick = function () {
+                eliminaRiga(this.parentNode.parentNode, dati);
+            };
+            cellaelimina.appendChild(deleteButton);
+        }
+        function eliminaRiga(row, dati) {
+    if (confirm("Sei sicuro di voler eliminare questa riga?")) {
+
+        row.parentNode.removeChild(row);
+        
+       
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'elimina_dati.php', true);
+         xhr.onload = function () {
+             if (xhr.status === 200) {
+                 
+             } else {
+                alert('Errore: Riprova ');
+             }
+         };
+         xhr.send(JSON.stringify(dati));
+    }
+}
+
+    </script>
+</body>
+
+</html>
